@@ -1,0 +1,5 @@
+(library
+ (name rows)
+ (public_name rows)
+ (modules rows)
+ (libraries stdlib-shims))

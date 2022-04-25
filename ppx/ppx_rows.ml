@@ -26,26 +26,55 @@ let constr_expr ~loc (str : string) =
         constr_name = [%e Exp.constant (Const.string str)];
       }])
 
-let disj_expr ~loc (left_methods : string Location.loc list)
+let disj_expr ~loc (wrap_method : string Location.loc option)
+    (left_methods : string Location.loc list)
     (right_methods : string Location.loc list) : expression =
   let open Ast_helper in
-  let method_ origin (name : string Location.loc) =
+  let call_exp e name =
+    match wrap_method with
+    | Some wrap_method -> Exp.send (Exp.send e wrap_method) name
+    | None -> Exp.send e name
+  in
+  let method_ exp meth =
+    Cf.method_ ~loc meth Public @@ Cf.concrete Fresh @@ exp
+  in
+  let concat_body_method exp (name : string Location.loc) =
     let name = Location.mknoloc name.txt in
-    Cf.method_ ~loc name Public @@ Cf.concrete Fresh @@ Exp.send origin name
+    Cf.method_ ~loc name Public @@ Cf.concrete Fresh @@ call_exp exp name
   in
   let concat_body (l, ls) (r, rs) =
     Exp.object_ ~loc
-    @@ Cstr.mk (Pat.any ()) (List.map (method_ l) ls @ List.map (method_ r) rs)
+    @@ Cstr.mk (Pat.any ())
+         (List.map (concat_body_method l) ls
+         @ List.map (concat_body_method r) rs)
   in
-  let method_type (name : string Location.loc) = Of.tag name (Typ.any ()) in
+  let wrap_exp e =
+    match wrap_method with
+    | Some wrap_method ->
+        Exp.object_ ~loc @@ Cstr.mk (Pat.any ()) [ method_ e wrap_method ]
+    | None -> e
+  in
+  let method_type ?(body = Typ.any ()) (name : string Location.loc) =
+    Of.tag name body
+  in
   let split_type names = Typ.object_ ~loc (List.map method_type names) Closed in
+  let wrap_type t =
+    match wrap_method with
+    | Some wrap_method ->
+        Typ.object_ ~loc [ method_type wrap_method ~body:t ] Closed
+    | None -> t
+  in
   [%expr
     {
       disj_concat =
         (fun l r ->
-          [%e concat_body ([%expr l], left_methods) ([%expr r], right_methods)]);
-      disj_splitL = (fun lr -> (lr :> [%t split_type left_methods]));
-      disj_splitR = (fun lr -> (lr :> [%t split_type right_methods]));
+          [%e
+            wrap_exp
+            @@ concat_body ([%expr l], left_methods) ([%expr r], right_methods)]);
+      disj_splitL =
+        (fun lr -> (lr :> [%t wrap_type @@ split_type left_methods]));
+      disj_splitR =
+        (fun lr -> (lr :> [%t wrap_type @@ split_type right_methods]));
     }]
 
 let let_ ~loc (strloc : string Location.loc) expr =
@@ -80,21 +109,29 @@ let constr =
     (fun ~loc ~path:_ strlocs ->
       [%stri include [%m declare_constrs ~loc strlocs]])
 
+let ident_or_list () =
+  let open Ppxlib.Ast_pattern in
+  elist (pexp_ident (lident __'))
+  ||| map1 ~f:(fun x -> [ x ]) (pexp_ident (lident __'))
+
+let ident_or_list_pair () =
+  let open Ppxlib.Ast_pattern in
+  pexp_tuple (ident_or_list () ^:: ident_or_list () ^:: nil)
+
 let disj =
   let open Ppxlib in
   Extension.declare "disj" Extension.Context.Expression
     Ast_pattern.(
       pstr
       @@ pstr_eval
-           (pexp_tuple
-              ((elist (pexp_ident (lident __'))
-               ||| map1 ~f:(fun x -> [ x ]) (pexp_ident (lident __')))
-              ^:: (elist (pexp_ident (lident __'))
-                  ||| map1 ~f:(fun x -> [ x ]) (pexp_ident (lident __')))
-              ^:: nil))
+           (alt_option
+              (pexp_apply
+                 (pexp_ident (lident __'))
+                 (no_label (ident_or_list_pair ()) ^:: nil))
+              (ident_or_list_pair ()))
            nil
       ^:: nil)
-    (fun ~loc ~path:_ ls rs -> disj_expr ~loc ls rs)
+    (fun ~loc ~path:_ wrap ls rs -> disj_expr ~loc wrap ls rs)
 
 let () =
   Ppxlib.Driver.register_transformation ~extensions:[ method_; constr; disj ]

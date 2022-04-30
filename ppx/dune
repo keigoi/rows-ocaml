@@ -1,6 +1,16 @@
 (library
  (name ppx_rows)
  (public_name rows.ppx)
+ (modules ppx_rows)
+ (kind ppx_rewriter)
+ (libraries ppxlib)
+ (preprocess
+  (pps ppxlib.metaquot)))
+
+(library
+ (name ppx_rows_ty)
+ (public_name rows.ppx.ty)
+ (modules ppx_rows_ty concat)
  (kind ppx_rewriter)
  (libraries ppxlib)
  (preprocess

@@ -11,14 +11,14 @@ let field_types_otyp ~loc = function
       raise
         (Pending
            ( loc,
-             Format.asprintf "not applicable for object concatenation: %a"
+             Format.asprintf "Can't concatenate an unknown type: %a"
                !Ocaml_common.Oprint.out_type
                typ ))
 
-let typeconstr_name typ =
-  match Printtyp.tree_of_typexp false typ with
-  | Outcometree.Otyp_constr (ident, _) -> ident
-  | _ -> assert false
+let otyp_of_typ env typ =
+  let typ = Ctype.repr (Ctype.expand_head env typ) in
+  Printtyp.reset_and_mark_loops typ;
+  Printtyp.tree_of_typexp false typ
 
 let make_method ?loc fld exp =
   Ast_helper.Cf.method_ ?loc (Location.mknoloc fld) Public
@@ -36,7 +36,9 @@ let make_field ?loc var (fld, _typ) =
 let generate_projection ~loc ?from ?onto vars_typs =
   let rec loop fld_nests vars_typs =
     let vars_flds =
-      List.map (fun (domvar, typ) -> (domvar, field_types_otyp ~loc typ)) vars_typs
+      List.map
+        (fun (domvar, typ) -> (domvar, field_types_otyp ~loc typ))
+        vars_typs
     in
     let all_flds =
       let flds =
@@ -79,11 +81,6 @@ let generate_projection ~loc ?from ?onto vars_typs =
 let concatenation ~loc typs = generate_projection ~loc typs
 let projection ~loc ~onto typs = generate_projection ~loc ~from:"lr" ~onto typs
 
-let rec abbrev_paths = function
-  | Types.Mcons (_, path, _, _, xs) -> path :: abbrev_paths xs
-  | Mnil -> []
-  | Mlink xs -> abbrev_paths !xs
-
 let fill_hole ~loc (holeexp : Typedtree.expression) =
   let typ = Ctype.repr (Ctype.expand_head holeexp.exp_env holeexp.exp_type) in
   let _lr, l, r =
@@ -96,21 +93,12 @@ let fill_hole ~loc (holeexp : Typedtree.expression) =
              typ)
   in
   let l_typ, r_typ =
-    (Printtyp.tree_of_typexp false l, Printtyp.tree_of_typexp false r)
+    (otyp_of_typ holeexp.exp_env l, otyp_of_typ holeexp.exp_env r)
   in
   let typs = [ ("l", l_typ); ("r", r_typ) ] in
-  let expr =
-    try
-      [%expr
-        {
-          disj_concat = (fun l r -> [%e concatenation ~loc typs]);
-          disj_splitL = (fun lr -> [%e projection ~loc ~onto:"l" typs]);
-          disj_splitR = (fun lr -> [%e projection ~loc ~onto:"r" typs]);
-        }]
-    with (Location.Error _) as e ->
-      print_endline
-      @@ Format.asprintf "error parsing types: %a\n" !Oprint.out_type
-           (Printtyp.tree_of_typexp false typ);
-      raise e
-  in
-  expr
+  [%expr
+    {
+      disj_concat = (fun l r -> [%e concatenation ~loc typs]);
+      disj_splitL = (fun lr -> [%e projection ~loc ~onto:"l" typs]);
+      disj_splitR = (fun lr -> [%e projection ~loc ~onto:"r" typs]);
+    }]

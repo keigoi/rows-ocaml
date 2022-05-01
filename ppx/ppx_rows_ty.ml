@@ -1,11 +1,16 @@
 open Parsetree
 
+let pending : (Warnings.loc * string) option ref = ref None
+
 let fillup_hole self (super : Untypeast.mapper) attr
     (texp : Typedtree.expression) =
   match attr with
   | { Parsetree.attr_name = { txt = "HOLE"; _ }; attr_loc = loc; _ } -> (
+      pending := None;
       try Concat.fill_hole ~loc texp
-      with Concat.Pending (_, _) -> super.expr self texp)
+      with Concat.Pending (loc, msg) ->
+        pending := Some (loc, msg);
+        super.expr self texp)
   | _ -> super.expr self texp
 
 let untyper =
@@ -25,7 +30,11 @@ let rec loop_typer_untyper str =
   let env = Compmisc.initial_env () in
   let tstr, _, _, _ = Typemod.type_structure env str in
   let untypstr = untyper.structure untyper tstr in
-  if str = untypstr then untypstr else loop_typer_untyper untypstr
+  if str = untypstr then
+    match !pending with
+    | None -> untypstr
+    | Some (loc, msg) -> Location.raise_errorf ~loc "%s" msg
+  else loop_typer_untyper untypstr
 
 let make_hole =
   let cnt = ref 0 in

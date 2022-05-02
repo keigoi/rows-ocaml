@@ -26,15 +26,17 @@ let untyper =
   }
 
 let rec loop_typer_untyper str =
-  Compmisc.init_path ();
-  let env = Compmisc.initial_env () in
-  let tstr, _, _, _ = Typemod.type_structure env str in
-  let untypstr = untyper.structure untyper tstr in
-  if str = untypstr then
-    match !pending with
-    | None -> untypstr
-    | Some (loc, msg) -> Location.raise_errorf ~loc "%s" msg
-  else loop_typer_untyper untypstr
+  try
+    Compmisc.init_path ();
+    let env = Compmisc.initial_env () in
+    let tstr, _, _, _ = Typemod.type_structure env str in
+    let untypstr = untyper.structure untyper tstr in
+    if str = untypstr then
+      match !pending with
+      | None -> untypstr
+      | Some (loc, msg) -> Location.raise_errorf ~loc "%s" msg
+    else loop_typer_untyper untypstr
+  with Typecore.Error _ -> str
 
 let make_hole =
   let cnt = ref 0 in

@@ -4,8 +4,6 @@
 
 (version 0.0.1)
 
-(allow_approximate_merlin)
-
 (using fmt 1.1)
 
 (authors "Keigo Imai")
@@ -23,4 +21,4 @@
  (name rows)
  (synopsis "First-class variant tags and object methods")
  (description "First-class variant tags and object methods.")
- (depends stdlib-shims))
+ (depends stdlib-shims ppxlib ocaml-compiler-libs))

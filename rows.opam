@@ -11,6 +11,8 @@ bug-reports: "https://github.com/keigoi/rows-ocaml/issues"
 depends: [
   "dune" {>= "1.12"}
   "stdlib-shims"
+  "ppxlib"
+  "ocaml-compiler-libs"
 ]
 build: [
   ["dune" "subst"] {pinned}

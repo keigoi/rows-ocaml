@@ -21,8 +21,9 @@
  (description "First-class variant tags and object methods.")
  (depends
   (ocaml
-   (< 4.14.0))
-  stdlib-shims
+   (and
+    (>= 4.12.0)
+    (< 4.14.0)))
   ppxlib
   ocaml-compiler-libs
   (ounit :with-test)))

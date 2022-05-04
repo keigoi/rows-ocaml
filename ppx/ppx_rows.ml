@@ -1,4 +1,5 @@
-open Parsetree
+open Ppxlib
+module Location = Ocaml_common.Location
 
 let method_expr ~loc (str0 : string) =
   let strloc = Location.mknoloc str0 in
@@ -96,30 +97,28 @@ let declare_constrs ~loc strlocs : Parsetree.module_expr =
          strlocs))
 
 let method_ =
-  let open Ppxlib in
   Extension.declare "declare_method" Extension.Context.Structure_item
     Ast_pattern.(pstr (many (pstr_eval (pexp_ident (lident __')) nil)))
     (fun ~loc ~path:_ strlocs ->
       [%stri include [%m declare_methods ~loc strlocs]])
 
 let constr =
-  Ppxlib.Extension.declare "declare_constr"
-    Ppxlib.Extension.Context.Structure_item
-    Ppxlib.Ast_pattern.(pstr (many (pstr_eval (pexp_ident (lident __')) nil)))
+  Extension.declare "declare_constr"
+    Extension.Context.Structure_item
+    Ast_pattern.(pstr (many (pstr_eval (pexp_ident (lident __')) nil)))
     (fun ~loc ~path:_ strlocs ->
       [%stri include [%m declare_constrs ~loc strlocs]])
 
 let ident_or_list () =
-  let open Ppxlib.Ast_pattern in
+  let open Ast_pattern in
   elist (pexp_ident (lident __'))
   ||| map1 ~f:(fun x -> [ x ]) (pexp_ident (lident __'))
 
 let ident_or_list_pair () =
-  let open Ppxlib.Ast_pattern in
+  let open Ast_pattern in
   pexp_tuple (ident_or_list () ^:: ident_or_list () ^:: nil)
 
 let disj =
-  let open Ppxlib in
   Extension.declare "disj" Extension.Context.Expression
     Ast_pattern.(
       pstr
@@ -134,5 +133,5 @@ let disj =
     (fun ~loc ~path:_ wrap ls rs -> disj_expr ~loc wrap ls rs)
 
 let () =
-  Ppxlib.Driver.register_transformation ~extensions:[ method_; constr; disj ]
+  Driver.register_transformation ~extensions:[ method_; constr; disj ]
     "ppx_rows"

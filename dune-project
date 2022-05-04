@@ -1,10 +1,8 @@
-(lang dune 1.12)
+(lang dune 3.1)
 
 (name rows)
 
 (version 0.0.1)
-
-(using fmt 1.1)
 
 (authors "Keigo Imai")
 
@@ -21,4 +19,4 @@
  (name rows)
  (synopsis "First-class variant tags and object methods")
  (description "First-class variant tags and object methods.")
- (depends stdlib-shims ppxlib ocaml-compiler-libs))
+ (depends (ocaml (< 4.14.0)) stdlib-shims ppxlib ocaml-compiler-libs))

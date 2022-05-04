@@ -9,13 +9,15 @@ homepage: "https://github.com/keigoi/rows-ocaml"
 doc: "https://github.com/keigoi/rows-ocaml"
 bug-reports: "https://github.com/keigoi/rows-ocaml/issues"
 depends: [
-  "dune" {>= "1.12"}
+  "dune" {>= "3.1"}
+  "ocaml" {< "4.14.0"}
   "stdlib-shims"
   "ppxlib"
   "ocaml-compiler-libs"
+  "odoc" {with-doc}
 ]
 build: [
-  ["dune" "subst"] {pinned}
+  ["dune" "subst"] {dev}
   [
     "dune"
     "build"

@@ -15,11 +15,6 @@ let field_types_otyp ~loc = function
                !Ocaml_common.Oprint.out_type
                typ ))
 
-let otyp_of_typ env typ =
-  let typ = Ctype.repr (Ctype.expand_head env typ) in
-  Printtyp.reset_and_mark_loops typ;
-  Printtyp.tree_of_typexp false typ
-
 let make_method ?loc fld exp =
   Ast_helper.Cf.method_ ?loc (Location.mknoloc fld) Public
     (Cfk_concrete (Fresh, exp))
@@ -82,10 +77,10 @@ let concatenation ~loc typs = generate_projection ~loc typs
 let projection ~loc ~onto typs = generate_projection ~loc ~from:"lr" ~onto typs
 
 let fill_hole ~loc (holeexp : Typedtree.expression) =
-  let typ = Ctype.repr (Ctype.expand_head holeexp.exp_env holeexp.exp_type) in
+  let typ = Compatibility.repr_type holeexp in
   let _lr, l, r =
     (* extract inferred type args of ('lr,'l,'r) Rows.disj *)
-    match typ.Types.desc with
+    match Compatibility.type_expr_desc typ with
     | Types.Tconstr (_, [ lr; l; r ], _) -> (lr, l, r)
     | _ ->
         error loc
@@ -93,7 +88,8 @@ let fill_hole ~loc (holeexp : Typedtree.expression) =
              typ)
   in
   let l_typ, r_typ =
-    (otyp_of_typ holeexp.exp_env l, otyp_of_typ holeexp.exp_env r)
+    ( Compatibility.otyp_of_typ holeexp.exp_env l,
+      Compatibility.otyp_of_typ holeexp.exp_env r )
   in
   let typs = [ ("l", l_typ); ("r", r_typ) ] in
   [%expr

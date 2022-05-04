@@ -28,7 +28,7 @@ module Typeful = struct
     try
       Compmisc.init_path ();
       let env = Compmisc.initial_env () in
-      let tstr, _, _, _ = Typemod.type_structure env str in
+      let tstr = Compatibility.type_structure env str in
       let untypstr = untyper.structure untyper tstr in
       if str = untypstr then
         match !pending with

@@ -21,9 +21,8 @@
  (description "First-class variant tags and object methods.")
  (depends
   (ocaml
-   (and
-    (>= 4.12.0)
-    (< 4.14.0)))
+   (>= 4.12.0))
   ppxlib
   ocaml-compiler-libs
+  (cppo :with-build)
   (ounit :with-test)))

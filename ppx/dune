@@ -10,8 +10,14 @@
 (library
  (name ppx_rows_ty)
  (public_name rows.ppx.ty)
- (modules ppx_rows_ty concat)
+ (modules ppx_rows_ty concat compatibility)
  (kind ppx_rewriter)
  (libraries ppxlib compiler-libs.common)
  (preprocess
   (pps ppxlib.metaquot)))
+
+(rule
+ (targets compatibility.ml)
+ (deps compatibility.cppo.ml)
+ (action
+  (run %{bin:cppo} %{deps} -V OCAML:%{ocaml_version} -o %{targets})))

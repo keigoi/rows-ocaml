@@ -14,6 +14,7 @@ depends: [
   "stdlib-shims"
   "ppxlib"
   "ocaml-compiler-libs"
+  "ounit" {with-test}
   "odoc" {with-doc}
 ]
 build: [

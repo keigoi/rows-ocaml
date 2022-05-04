@@ -19,4 +19,10 @@
  (name rows)
  (synopsis "First-class variant tags and object methods")
  (description "First-class variant tags and object methods.")
- (depends (ocaml (< 4.14.0)) stdlib-shims ppxlib ocaml-compiler-libs))
+ (depends
+  (ocaml
+   (< 4.14.0))
+  stdlib-shims
+  ppxlib
+  ocaml-compiler-libs
+  (ounit :with-test)))

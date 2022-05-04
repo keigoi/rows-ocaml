@@ -24,5 +24,5 @@
    (>= 4.12.0))
   ppxlib
   ocaml-compiler-libs
-  (cppo :with-build)
+  cppo
   (ounit :with-test)))

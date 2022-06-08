@@ -22,7 +22,8 @@
  (depends
   (ocaml
    (>= 4.12.0))
-  ppxlib
+  (ppxlib
+   (>= 0.19.0))
   ocaml-compiler-libs
   cppo
   (ounit :with-test)))

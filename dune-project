@@ -23,7 +23,7 @@
   (ocaml
    (>= 4.12.0))
   (ppxlib
-   (>= 0.19.0))
+   (and (>= 0.19.0) (< 0.27.0)))
   ocaml-compiler-libs
   cppo
   (ounit :with-test)))

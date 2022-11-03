@@ -1,5 +1,13 @@
+(* Using compilerlib (NOT ppxlib)
+ * Typeful translation of Typedtree, back to Parsetree,
+ *)
 open Parsetree
-open Ast_helper
+(* 
+A quick dirty hack to cope with 0.27.0 would be:
+module Ppxlib_ast = struct 
+  module Ast = Ppxlib_ast.Compiler_version.Ast.Parsetree
+end 
+*)
 
 exception Pending of Location.t * string
 
@@ -23,7 +31,7 @@ let make_call ?loc exp fld = Ast_helper.Exp.send ?loc exp (Location.mknoloc fld)
 
 let make_object ?loc0 flds =
   let loc = Location.none in
-  Exp.object_ ?loc:loc0 @@ Ast_helper.Cstr.mk [%pat? _] flds
+  Ast_helper.Exp.object_ ?loc:loc0 @@ Ast_helper.Cstr.mk [%pat? _] flds
 
 let make_field ?loc var (fld, _typ) =
   make_method ?loc fld (make_call ?loc var fld)
@@ -59,7 +67,7 @@ let generate_projection ~loc ?from ?onto vars_typs =
       with
       | [ (var, _) ] ->
           let var = Option.value ~default:var from in
-          let var = Exp.ident (Location.mknoloc @@ Longident.Lident var) in
+          let var = Ast_helper.Exp.ident (Location.mknoloc @@ Longident.Lident var) in
           (* field has no duplicate. just project onto it *)
           make_method fld
             (List.fold_left (fun exp f -> make_call exp f) var @@ List.rev nests)

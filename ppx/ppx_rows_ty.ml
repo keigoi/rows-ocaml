@@ -1,4 +1,6 @@
 module Typeful = struct
+  (* Use compiler-libs, not Ppxlib *)
+  open Ocaml_common
   let pending : (Warnings.loc * string) option ref = ref None
 
   let fillup_hole self (super : Untypeast.mapper) attr
@@ -84,11 +86,12 @@ module Typeless = struct
     obj#structure str
 end
 
-let transform (str : Ppxlib.Parsetree.structure) =
+let transform (str : Ppxlib.Selected_ast.Ast.Parsetree.structure) =
+  str |>
+  Typeless.replace_hashhash |>
+  Ppxlib.Selected_ast.To_ocaml.copy_structure |>
+  Typeful.loop_typer_untyper |>
   Ppxlib.Selected_ast.Of_ocaml.copy_structure
-  @@ Typeful.loop_typer_untyper
-  @@ Ppxlib.Selected_ast.To_ocaml.copy_structure
-  @@ Typeless.replace_hashhash str
 
 let hole =
   Ppxlib.Extension.declare "HOLE" Ppxlib.Extension.Context.expression

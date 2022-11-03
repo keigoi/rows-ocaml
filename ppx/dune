@@ -12,7 +12,10 @@
  (public_name rows.ppx.ty)
  (modules ppx_rows_ty concat compatibility)
  (kind ppx_rewriter)
- (libraries ppxlib compiler-libs.common)
+ (libraries 
+    ppxlib
+    ocaml-compiler-libs.common
+  )
  (preprocess
   (pps ppxlib.metaquot)))
 

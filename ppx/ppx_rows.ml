@@ -104,10 +104,22 @@ let method_ =
 
 let constr =
   Extension.declare "declare_constr"
-    Extension.Context.Structure_item
-    Ast_pattern.(pstr (many (pstr_eval (pexp_ident (lident __')) nil)))
-    (fun ~loc ~path:_ strlocs ->
-      [%stri include [%m declare_constrs ~loc strlocs]])
+      Extension.Context.Structure_item
+      Ast_pattern.(pstr (many (pstr_eval (pexp_ident (lident __')) nil)))
+        (fun ~loc ~path:_ strlocs ->
+          [%stri include [%m declare_constrs ~loc strlocs]])
+
+let constr_expr =
+  Extension.declare "rows_make_constr" Extension.Context.Expression
+        Ast_pattern.(
+          pstr
+            (pstr_eval
+              (
+                  (pexp_ident (lident __))
+                  )
+              nil
+            ^:: nil))
+        (fun ~loc ~path:_ str -> (constr_expr ~loc str))
 
 let ident_or_list () =
   let open Ast_pattern in
@@ -133,5 +145,5 @@ let disj =
     (fun ~loc ~path:_ wrap ls rs -> disj_expr ~loc wrap ls rs)
 
 let () =
-  Driver.register_transformation ~extensions:[ method_; constr; disj ]
+  Driver.register_transformation ~extensions:[ method_; constr; constr_expr; disj ]
     "ppx_rows"
